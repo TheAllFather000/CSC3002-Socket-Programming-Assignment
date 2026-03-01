@@ -17,9 +17,13 @@ INSERT_QUERY_MESSAGES = """
 
 
 SELECT_USERS = """
-    SELECT * FROM user_info 
+    SELECT username, colour FROM user_info 
     WHERE username = '{user}';
 """
+SELECT_USERS_ALL = """
+    SELECT username, colour FROM user_info;
+"""
+
 SELECT_MESSAGES = """
     SELECT * FROM messages 
     WHERE recipient = '{r}' AND sender = '{s}';
@@ -75,6 +79,19 @@ class DB:
             print("Exception: ", e)
             return None
 
+    def retrieve_all_users(self):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(SELECT_USERS_ALL)
+            response = cursor.fetchall()
+            return response
+        except psycopg2.errors.Error as e:
+            print("Psycopg Error", e)
+            return None
+        except Exception as e:
+            print("Exception: ", e)
+            return None
+
     def upload_message(
         self, sender: str, recipient: str, status: str, type: str, content: str
     ):
@@ -119,7 +136,7 @@ class DB:
 
 def main():
     d = DB()
-    print(d.retrieve_messages("chi-chi", "goku"))
+    print(d.retrieve_all_users())
 
 
 # print(__name__)
