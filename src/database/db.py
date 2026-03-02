@@ -1,4 +1,5 @@
 import psycopg2
+import json
 
 DATABASE = "socket_db"
 USER = "server_socket"
@@ -6,8 +7,8 @@ PASSWORD = "Yellowbeansaregreeninpalehaven123!"
 HOST = "localhost"
 PORT = 5432
 INSERT_QUERY_USERS = """
-        INSERT INTO user_info(username, password, colour)
-        VALUES ('{user}', '{pass_}', '{col}');
+        INSERT INTO user_info(username, password)
+        VALUES ('{user}', '{pass_}');
     """
 
 INSERT_QUERY_MESSAGES = """
@@ -49,12 +50,10 @@ class DB:
     def __init__(self):
         self.connection = psycopg2.connect(**connection_params)
 
-    def create_user(self, username: str, password: str, colour: str):
+    def create_user(self, username: str, password: str):
         cursor = self.connection.cursor()
         try:
-            cursor.execute(
-                INSERT_QUERY_USERS.format(user=username, pass_=password, col=colour)
-            )
+            cursor.execute(INSERT_QUERY_USERS.format(user=username, pass_=password))
             self.connection.commit()
             return True
         except psycopg2.errors.UniqueViolation as e:
@@ -65,13 +64,54 @@ class DB:
             print("Error: ", e)
             return False
 
+    def create_group(self, group_name, members: list):
+        cursor = self.connection.cursor()
+        m = "'{" + ",".join(members) + "}'"
+        try:
+            cursor.execute(
+                f"INSERT INTO groups(group_name, members) VALUES({group_name},{m});"
+            )
+            self.connection.commit()
+            return True
+        except psycopg2.errors.UniqueViolation as uv:
+            self.connection.rollback()
+            print("UniqueViolation: ", uv)
+            return False
+        except psycopg2.errors.Error as pe:
+            self.connection.rollback()
+            print("Psycopg error: ", pe)
+            return False
+        except Exception as e:
+            self.connection.rollback()
+            print("Exception: ", e)
+            return False
+
+    def get_group_members(self, group_name):
+        cursor = self.connection.cursor()
+
+        try:
+            cursor.execute(
+                f"SELECT members FROM groups WHERE group_name = '{group_name}'"
+            )
+            return cursor.fetchone()[0]
+        except psycopg2.errors.UniqueViolation as uv:
+            print("UniqueViolation: ", uv)
+            return None
+        except psycopg2.errors.Error as pe:
+            print("Psycopg error: ", pe)
+            return None
+        except Exception as e:
+            print("Exception: ", e)
+            return None
+
     def retrieve_user(self, username: str):
         cursor = self.connection.cursor()
         try:
-            print(SELECT_USERS.format(user=username))
             cursor.execute(SELECT_USERS.format(user=username))
             response = cursor.fetchall()
-            return response
+            data = json.dumps({"username": response[0][0], "colour": response[0][1]})
+            print(data)
+            return data
         except psycopg2.errors.Error as e:
             print("Psycopg Error: ", e)
             return None
@@ -84,7 +124,11 @@ class DB:
         try:
             cursor.execute(SELECT_USERS_ALL)
             response = cursor.fetchall()
-            return response
+            data = {}
+            for i in response:
+                data.update({i: response[i]})
+
+            return data
         except psycopg2.errors.Error as e:
             print("Psycopg Error", e)
             return None
@@ -115,7 +159,11 @@ class DB:
         try:
             cursor.execute(SELECT_MESSAGES_UNREAD.format(r=username))
             response = cursor.fetchall()
-            return response
+            data = {}
+            for i in response:
+                data.update({i: response[i]})
+
+            return data
         except psycopg2.errors.Error as e:
             print("Database Error: ", e)
             return None
@@ -128,7 +176,11 @@ class DB:
         try:
             cursor.execute(SELECT_MESSAGES.format(r=username, s=sender))
             response = cursor.fetchall()
-            return response
+            data = {}
+            for i in response:
+                data.update({i: response[i]})
+
+            return data
         except psycopg2.errors.Error as e:
             print("Database Exception", e)
             return None
