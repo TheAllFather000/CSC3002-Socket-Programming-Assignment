@@ -8,12 +8,14 @@ import os
 import threading
 import hashlib
 import sys
+import time
 
 # Default server details
 host = sys.argv[1] if len(sys.argv) > 1 else '156.155.224.26'
 port = int(sys.argv[2]) if len(sys.argv) > 2 else 5000
 file_listen_port = 6000
 chunk_size = 4096
+presence_port = 5555
 
 username = None
 pending_files = {} # local filepath, created before server confirms
@@ -235,6 +237,13 @@ def write():
             print(f"An error occurred: {e}")
             break
 
+def presence_ping(username):
+    udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    while True:
+        message = f"ONLINE {username}"
+        udp_sock.sendto(message.encode('ascii'), (host, presence_port))
+        time.sleep(0,1) # 100 ms interval
 
 # Starting threads for sending and receiving messages/files
 if __name__ == "__main__":
@@ -249,6 +258,9 @@ if __name__ == "__main__":
     # Server message receiver thread
     #receive()
     threading.Thread(target=receive, daemon=True).start()
+
+    # Presence ping thread
+    threading.Thread(target=presence_ping, args=(username,), daemon=True).start()
 
     # Keep main thread alive
     threading.Event().wait()
