@@ -27,6 +27,7 @@ tcp_latencies = []   # ms per send
 udp_latencies = []   # ms per heartbeat RTT
 file_results  = []  
 
+'''
 def log_result(event, value):
     with open("results_log.txt", "a") as f:
         f.write(f"{time.strftime('%H:%M:%S')} | {event} | {value}\n")
@@ -58,7 +59,7 @@ def print_benchmark():
         print(f"  File success rate: {success_rate:.1f}%")
     else:
         print("File transfers: no data yet.")
-
+'''
 
 # Create TCP socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -162,7 +163,7 @@ def receive_file(peer_sock, peer_addr):
             "throughput_kbps": throughput,
             "success":        success
         })
-        log_result("FILE_RECV", f"{filename} | {filesize}B | {duration:.3f}s | {throughput:.1f}KB/s | {'OK' if success else 'FAIL'}")
+        # log_result("FILE_RECV", f"{filename} | {filesize}B | {duration:.3f}s | {throughput:.1f}KB/s | {'OK' if success else 'FAIL'}")
 
 # File sender
 def send_file(peer_ip, peer_port, filepath):
@@ -211,7 +212,7 @@ def send_file(peer_ip, peer_port, filepath):
             "throughput_kbps": throughput,
             "success":         success
         })
-        log_result("FILE_SEND", f"{filename} | {filesize}B | {duration:.3f}s | {throughput:.1f}KB/s | {'OK' if success else 'FAIL'}")
+        # log_result("FILE_SEND", f"{filename} | {filesize}B | {duration:.3f}s | {throughput:.1f}KB/s | {'OK' if success else 'FAIL'}")
 
 
 # Server message receiver
@@ -288,12 +289,13 @@ def presence_ping(username):
         payload = json.dumps({"type": "presence_ping", "user": username})
         t0      = time.perf_counter()
         udp_sock.sendto(payload.encode('ascii'), (host, udp_port))
+        
         # Attempt to measure RTT if server echoes back
         try:
             udp_sock.recvfrom(1024)
             rtt_ms = (time.perf_counter() - t0) * 1000
             udp_latencies.append(rtt_ms)
-            log_result("UDP_RTT_MS", f"{rtt_ms:.2f}")
+            # log_result("UDP_RTT_MS", f"{rtt_ms:.2f}")
         except socket.timeout:
             pass
 
@@ -335,7 +337,7 @@ if __name__ == "__main__":
             client.send(payload.encode())
             latency_ms = (time.perf_counter() - t0) * 1000
             tcp_latencies.append(latency_ms)
-            log_result("TCP_LATENCY_MS", f"{latency_ms:.2f}")
+            #log_result("TCP_LATENCY_MS", f"{latency_ms:.2f}")
 
 
         # Send to users who have joined a specific group
@@ -347,7 +349,7 @@ if __name__ == "__main__":
             client.send(payload.encode())
             latency_ms = (time.perf_counter() - t0) * 1000
             tcp_latencies.append(latency_ms)
-            log_result("TCP_LATENCY_MS", f"{latency_ms:.2f}")
+            #log_result("TCP_LATENCY_MS", f"{latency_ms:.2f}")
 
         elif user_input.startswith("join"):
             _, group = user_input.split(" ")
@@ -367,7 +369,7 @@ if __name__ == "__main__":
             client.send(payload.encode())
             latency_ms = (time.perf_counter() - t0) * 1000
             tcp_latencies.append(latency_ms)
-            log_result("TCP_LATENCY_MS", f"{latency_ms:.2f}")
+            #log_result("TCP_LATENCY_MS", f"{latency_ms:.2f}")
 
         elif user_input.startswith("file"):
             _, receiver, filepath = user_input.split(" ", 2)
@@ -386,7 +388,7 @@ if __name__ == "__main__":
 
         elif user_input == "log_out":
             running = False
-            print_benchmark()
+            #print_benchmark()
             client.close()
             break
 
