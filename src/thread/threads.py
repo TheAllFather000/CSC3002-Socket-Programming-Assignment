@@ -51,7 +51,7 @@ class server_thread:
         # print(message)
         data = json.loads(message)
         # print(data)
-        if data["type"].lower() == "login":
+        if data["command"].lower() == "login":
             # print(data["username"])
             self.add_active_client(data["username"], conn)
             try:
@@ -64,7 +64,7 @@ class server_thread:
                 )
             except Exception as e:
                 print("Exception: ", e)
-        elif data["type"] == "private":
+        elif data["command"] == "private":
             message_content = data["message"]
             success = False
             if data["recipient"] in self.active_clients:
@@ -150,11 +150,54 @@ class server_thread:
                     )
                     conn.send(f_payload.encode())
 
-        elif data["type"].lower() == "logout":
+        elif data["command"].lower() == "logout":
             self.logout(data["username"])
             bright_magenta(f"[LOGOUT] {datetime.datetime.now()}] {data['username']}")
+        elif data["command"].lower() == "join_group":
+            payload = self.add_member(
+                data.get("username"), data.get("group_name"), data.get("password")
+            )
+            conn.send(payload.encode())
+            bright_magenta(
+                f"[JOIN_GROUP] User '{data['username']}' joined Group '{data.get('group_name')}'"
+            )
+            members = self.db.get_group_members(data.get("group_name"))
+            if members is not None:
+                for m in members:
+                    if m in self.active_clients:
+                        conn = self.active_clients[m]["conn"]
+                        payload = json.dumps(
+                            {
+                                "from": "SERVER",
+                                "type": "group_text",
+                                "message": f"New member '{data.get('username')}' added to group '{data.get('group_name')}'",
+                                "time": datetime.datetime.now().strftime(
+                                    "%Y-%m-%d %H:%M:%S"
+                                ),
+                            }
+                        )
+                        conn.send(payload.encode())
+                    else:
+                        self.db.upload_message(
+                            data.get("username"),
+                            m,
+                            "unread group_text",
+                            data.get("group_name") + " {" + data.get("username") + "}",
+                            f"{message}",
+                        )
 
-        elif data["type"].lower() == "create_account":
+        elif data["command"].lower() == "ping":
+            self.ping(data["username"])
+            bright_magenta(f"[PING] Server pinged by user: '{data['username']}'")
+            payload = json.dumps(
+                {
+                    "command": "ping",
+                    "status": "success",
+                    "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            )
+            conn.send(payload.encode())
+        elif data["command"].lower() == "create_account":
             success = False
             try:
                 success = self.db.create_user(data["username"], data["password"])
@@ -170,9 +213,7 @@ class server_thread:
                     {
                         "status": "success",
                         "process": "create_account",
-                        "date_time": datetime.datetime.now().strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
+                        "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
 
@@ -223,6 +264,7 @@ class server_thread:
             self.db.create_group(
                 data["group_name"],
                 data["members"].replace("[", "").replace("]", "").split(","),
+                data["password"],
             )
 
     def message_group(self, username, group_name, message):
@@ -254,6 +296,29 @@ class server_thread:
         else:
             return False
 
+    def add_member(self, user_to_add, group_name, password):
+        if self.db.check_password(group_name, password) is not None:
+            self.db.add_member(user_to_add, group_name)
+            payload = json.dumps(
+                {
+                    "command": "join_group",
+                    "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "status": "success",
+                }
+            )
+            return payload
+        else:
+            payload = json.dumps(
+                {
+                    "command": "join_group",
+                    "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "status": "success",
+                    "reason": "Password or Group Name is incorrect",
+                }
+            )
+            return payload
+        pass
+
     def logout(self, username: str):
         payload = json.dumps(
             {
@@ -270,6 +335,10 @@ class server_thread:
                 red("Exception: " + e.__str__())
 
         pass
+
+    def ping(self, username):
+        if username in self.active_clients:
+            self.active_clients[username]["time"] = time.time()
 
     def handle_online_status(self):
         while True:

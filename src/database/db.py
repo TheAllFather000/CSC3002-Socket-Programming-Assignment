@@ -1,5 +1,6 @@
 import psycopg2
 import json
+import random
 
 DATABASE = "socket_db"
 USER = "server_socket"
@@ -7,8 +8,8 @@ PASSWORD = "Yellowbeansaregreeninpalehaven123!"
 HOST = "localhost"
 PORT = 5432
 INSERT_QUERY_USERS = """
-        INSERT INTO user_info(username, password)
-        VALUES ('{user}', '{pass_}');
+        INSERT INTO user_info(username, password, colour)
+        VALUES ('{user}', '{pass_}', '{colour_}');
     """
 
 INSERT_QUERY_MESSAGES = """
@@ -51,9 +52,19 @@ class DB:
         self.connection = psycopg2.connect(**connection_params)
 
     def create_user(self, username: str, password: str):
+        colour = {
+            '"r"': random.randint(0, 255),
+            '"g"': random.randint(0, 255),
+            '"b"': random.randint(0, 255),
+        }
+        colours = json.dumps(colour)
         cursor = self.connection.cursor()
         try:
-            cursor.execute(INSERT_QUERY_USERS.format(user=username, pass_=password))
+            cursor.execute(
+                INSERT_QUERY_USERS.format(
+                    user=username, pass_=password, colour_=colours
+                )
+            )
             self.connection.commit()
             return True
         except psycopg2.errors.UniqueViolation as e:
@@ -61,15 +72,16 @@ class DB:
             print("UniqueViolation Error: ", e)
             return False
         except Exception as e:
+            self.connection.rollback()
             print("Error: ", e)
             return False
 
-    def create_group(self, group_name, members: list):
+    def create_group(self, group_name, members: list, password):
         cursor = self.connection.cursor()
         m = "'{" + ",".join(members) + "}'"
         try:
             cursor.execute(
-                f"INSERT INTO groups(group_name, members) VALUES({group_name},{m});"
+                f"INSERT INTO groups(group_name, members, password) VALUES({group_name},{m}, {password});"
             )
             self.connection.commit()
             return True
@@ -88,7 +100,6 @@ class DB:
 
     def get_group_members(self, group_name):
         cursor = self.connection.cursor()
-
         try:
             cursor.execute(
                 f"SELECT members FROM groups WHERE group_name = '{group_name}'"
@@ -98,6 +109,48 @@ class DB:
             print("UniqueViolation: ", uv)
             return None
         except psycopg2.errors.Error as pe:
+            print("Psycopg error: ", pe)
+            return None
+        except Exception as e:
+            print("Exception: ", e)
+            return None
+
+    def check_password(self, group_name, password):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                f"SELECT * FROM groups where group_name = '{group_name}' and password = '{password}'"
+            )
+            response = cursor.fetchall()
+            if response is None or len(response) == 0:
+                return None
+            return response
+        except psycopg2.errors.UniqueViolation as uv:
+            self.connection.rollback()
+            print("UniqueViolation: ", uv)
+            return None
+        except psycopg2.errors.Error as pe:
+            self.connection.rollback()
+            print("Psycopg error: ", pe)
+            return None
+        except Exception as e:
+            print("Exception: ", e)
+            return None
+
+    def add_member(self, member, group):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                f"UPDATE groups set members = array_append(members, '{member}') WHERE group_name = {group}"
+            )
+            self.connection.commit()
+            return True
+        except psycopg2.errors.UniqueViolation as uv:
+            self.connection.rollback()
+            print("UniqueViolation: ", uv)
+            return None
+        except psycopg2.errors.Error as pe:
+            self.connection.rollback()
             print("Psycopg error: ", pe)
             return None
         except Exception as e:
