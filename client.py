@@ -10,7 +10,8 @@ import socket, os, threading, hashlib, sys, json, time, statistics
 # host = sys.argv[1] if len(sys.argv) > 1 else '156.155.224.26'
 # port = int(sys.argv[2]) if len(sys.argv) > 2 else 5000
 
-host = '196.47.212.61'
+# host = '196.47.212.61'
+host = '156.155.224.26'
 port = 5958
 file_listen_port = 6000
 chunk_size = 4096
@@ -21,6 +22,7 @@ username = None
 pending_files = {} # local filepath, created before server confirms
 logged_in = False
 running = True
+
 
 # Benchmarking
 tcp_latencies = []   # ms per send
@@ -156,13 +158,14 @@ def receive_file(peer_sock, peer_addr):
         peer_sock.close()
         duration = time.perf_counter() - start
         throughput = (filesize / 1024) / duration if duration > 0 else 0
-        file_results.append({
+        '''file_results.append({
             "filename":       filename,
             "size_bytes":     filesize,
             "duration_s":     duration,
             "throughput_kbps": throughput,
             "success":        success
         })
+        '''
         # log_result("FILE_RECV", f"{filename} | {filesize}B | {duration:.3f}s | {throughput:.1f}KB/s | {'OK' if success else 'FAIL'}")
 
 # File sender
