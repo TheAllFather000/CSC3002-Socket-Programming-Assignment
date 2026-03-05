@@ -36,7 +36,7 @@ except Exception as e:
 def file_listener():
     file_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     file_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    file_server.bind(('0.0.0.0', file_listen_port))
+    file_server.bind(('127.0.0.1', file_listen_port))
     file_server.listen(5)
 
     print(f"[File listener running on port {file_listen_port}]")
