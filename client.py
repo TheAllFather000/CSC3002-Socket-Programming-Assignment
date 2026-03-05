@@ -7,8 +7,11 @@ import socket, os, threading, hashlib, sys, json, time
 # from colorist import bright_magenta, bright_green, bright_red, bright_cyan, bright_yellow
 
 # Default server details
-host = sys.argv[1] if len(sys.argv) > 1 else '156.155.224.26'
-port = int(sys.argv[2]) if len(sys.argv) > 2 else 5000
+#host = sys.argv[1] if len(sys.argv) > 1 else '156.155.224.26'
+#port = int(sys.argv[2]) if len(sys.argv) > 2 else 5000
+
+host = '196.47.211.33'
+port = 5958
 
 file_listen_port = 6000
 chunk_size = 4096
@@ -158,7 +161,7 @@ def receive():
 
             try:
                 data = json.loads(message)
-                msg_type = data.get("type", "")
+                msg_type = data.get("command", "")
 
                 if msg_type == "login_success":
                     logged_in = True
@@ -209,7 +212,7 @@ def presence_ping(username):
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     while running:
-        payload = json.dumps({"type": "presence_ping", "user": username})
+        payload = json.dumps({"type": "ping", "user": username})
         udp_sock.sendto(payload.encode('ascii'), (host, udp_port))
         time.sleep(2)
 
@@ -223,10 +226,10 @@ if __name__ == "__main__":
         if user_input.startswith("login"):
             username = input("Username: ")
             password = input("Password: ")
-            payload = json.dumps({"type": "login", "username": username, "password": password})
+            payload = json.dumps({"command": "login", "username": username, "password": password})
             client.send(payload.encode())
 
-            time.sleep(0.5)
+            #time.sleep(0.5)
             if logged_in:
                 threading.Thread(target=file_listener, daemon=True).start()
                 threading.Thread(target=presence_ping, args=(username,), daemon=True).start()
@@ -234,30 +237,74 @@ if __name__ == "__main__":
         elif user_input.startswith("create_account"):
             username = input("Username: ")
             password = input("Password: ")
-            payload = json.dumps({"type": "create_account", "username": username, "password": password})
+            payload = json.dumps({"command": "create_account", "username": username, "password": password})
+            # print("Created")
             client.send(payload.encode())
 
         elif user_input.startswith("private"):
+            
+            username = input("Username: ")
+            recipient = input("Recipient: ")
+            msg = input("Message: ")
+            payload = json.dumps({"command": "private", "username": username,
+                                  "recipient": recipient, "message": msg})
+            client.send(payload.encode())
+
+        elif user_input.startswith("send_message"):
             _, receiver, *msg = user_input.split(" ")
-            payload = json.dumps({"type": "private", "sender": username,
+            payload = json.dumps({"command": "private", "sender": username,
                                   "receiver": receiver, "body": " ".join(msg)})
             client.send(payload.encode())
 
-        elif user_input.startswith("broadcast"):
-            _, *msg = user_input.split(" ")
-            payload = json.dumps({"type": "broadcast", "sender": username,
-                                  "body": " ".join(msg)})
+        elif user_input.startswith("create_group"):
+            username = input("Your username: ")
+            password = input("Group password: ")
+            group_name = input("Group name: ")
+
+            members = []
+            print("Add members one at a time. Press Enter with no name to finish.")
+            while True:
+                member = input("Add member:")
+                if not member:
+                    if not members:
+                        print("Please enter at least one member.")
+                        continue
+                    break
+                members.append(member)
+            
+            print(members)
+            payload = json.dumps({"command": "create_group", "username": username, "password": password, "group_name": group_name,
+                                  "members": ",".join(members)})
             client.send(payload.encode())
 
+        elif user_input.startswith("join_group"):
+                    uname      = input("Your username: ")
+                    group_name = input("Group name: ")
+                    password   = input("Group password: ")
+                    payload = json.dumps({"command":    "join_group", "username": username, "group_name": group_name, "password":   password
+                    })
+                    client.send(payload.encode())
+
+        elif user_input.startswith("message_group"):
+            username = input("Your username: ")
+            group_name = input("Group name: ")
+            msg = input("Message: ")
+            payload = json.dumps({"command": "message_group", "sender": username,
+                                  "group_name": group_name, "body": msg})
+            client.send(payload.encode())
+
+
         elif user_input.startswith("file"):
-            _, receiver, filepath = user_input.split(" ", 2)
+            filepath = input("Filepath")
+            receiver = input("Receiver: ")
+
             if not os.path.exists(filepath):
                 print(f"File not found: '{filepath}'")
                 continue
 
             pending_files[receiver] = filepath
             payload = json.dumps({
-                "type": "file_request", "sender": username, "receiver": receiver,
+                "command": "file_request", "sender": username, "receiver": receiver,
                 "filename": os.path.basename(filepath),
                 "filesize": os.path.getsize(filepath),
                 "file_listen_port": file_listen_port
@@ -265,10 +312,19 @@ if __name__ == "__main__":
             client.send(payload.encode())
             print(f"[File] Requesting transfer of '{os.path.basename(filepath)}' to {receiver}...")
 
-        elif user_input == "log_out":
+        elif user_input.startswith("ping"):
+            payload = json.dumps({"command": "ping", "username": username})
+            client.send(payload.encode())
+
+        elif user_input == "logout":
+            username = username
+            payload = json.dumps({"command": "logout", "username": username})
+            client.send(payload.encode())
+
+            # time.sleep(0.5)
             running = False
             client.close()
             break
 
         else:
-            print("Commands: login | create_account | private | broadcast | file | log_out")
+            print("Commands: login | create_account | create_group | private | message_group | add_member | file | ping | logout")
