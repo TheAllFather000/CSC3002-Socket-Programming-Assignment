@@ -22,10 +22,10 @@ client.connect((HOST, PORT))
 register_payload = json.dumps(
     {
         "command": "login",
-        "username": "wyrm",
-        "password": "pass",
+        "username": "chi-chi",
+        "password": "testp",
         "message": "hi teeheeee",
-        "recipient": "wyrm",
+        "recipient": "chi-chi",
         "colour": "blueish",
     }
 )
@@ -37,10 +37,37 @@ while True:
     data = json.loads(m.decode())
     print(data)
     break
-m = client.recv(3000)
-data = json.loads(m.decode())
-print(data)
-print(1)
+register_payload = json.dumps(
+    {
+        "command": "create_group",
+        "username": "chi-chi",
+        "password": "testp__",
+        "group_name": "torsion5__",
+        "members": '["wyrm", "zaahir"]',
+    }
+)
+client.send(register_payload.encode())
+while True:
+    m = client.recv(3000)
+    if not m:
+        break
+    data = json.loads(m.decode())
+    print(data)
+    break
+while True:
+    m = client.recv(3000)
+    if not m:
+        break
+    data = json.loads(m.decode())
+    if data["process"] == "logout":
+        print("JAAAAA")
+        break
+# m = client.recv(3000)
+# data = json.loads(m.decode())
+# print(data)
+# print(1)
+#
+
 # register_payload = json.dumps(
 #     {
 #         "type": "create_account",

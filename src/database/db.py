@@ -1,6 +1,7 @@
 import psycopg2
 import json
 import random
+import traceback
 
 DATABASE = "socket_db"
 USER = "server_socket"
@@ -15,6 +16,10 @@ INSERT_QUERY_USERS = """
 INSERT_QUERY_MESSAGES = """
         INSERT INTO messages(sender, recipient, status, type, content)
         VALUES ('{sen}', '{rec}', '{stat}', '{type_}', '{cont}');
+    """
+INSERT_QUERY_MESSAGES_GROUP = """
+        INSERT INTO messages(sender, recipient, status, type, content, group_)
+        VALUES ('{sen}', '{rec}', '{stat}', '{type_}', '{cont}', '{grp}');
     """
 
 
@@ -31,11 +36,14 @@ SELECT_MESSAGES = """
     WHERE recipient = '{r}' AND sender = '{s}';
 """
 SELECT_MESSAGES_UNREAD = """
-    SELECT * FROM messages 
+    SELECT recipient, sender, type, content FROM messages 
     WHERE recipient= '{r}' AND
-    WHERE messages.status = 'unread';
+    messages.status LIKE '%unread%';
 """
 
+UPDATE_UNREAD = """
+UPDATE messages set status = 'read' WHERE recipient = '{r}' and messages.status LIKE '%unread%';
+"""
 # connection object
 connection_params = {
     "dbname": DATABASE,
@@ -81,7 +89,7 @@ class DB:
         m = "'{" + ",".join(members) + "}'"
         try:
             cursor.execute(
-                f"INSERT INTO groups(group_name, members, password) VALUES({group_name},{m}, {password});"
+                f"INSERT INTO groups(group_name, members, password) VALUES('{group_name}',{m}, '{password}');"
             )
             self.connection.commit()
             return True
@@ -92,6 +100,40 @@ class DB:
         except psycopg2.errors.Error as pe:
             self.connection.rollback()
             print("Psycopg error: ", pe)
+            return False
+        except Exception as e:
+            self.connection.rollback()
+            print("Exception: ", e)
+            return False
+
+    def delete_group(self, group_name, password):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                f"DELETE FROM groups where group_name = '{group_name}' AND password = '{password}'"
+            )
+            self.connection.commit()
+            return True
+        except psycopg2.errors.Error as e:
+            self.connection.rollback()
+            print("Psycopg error: ", e)
+            return False
+        except Exception as e:
+            self.connection.rollback()
+            print("Exception: ", e)
+            return False
+
+    def exit_group(self, group_name, member):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                f"UPDATE groups set members = array_remove(members, '{member}' WHERE group_name = '{group_name}'"
+            )
+            self.connection.commit()
+            return True
+        except psycopg2.errors.Error as e:
+            self.connection.rollback()
+            print("Psycopg error: ", e)
             return False
         except Exception as e:
             self.connection.rollback()
@@ -162,9 +204,12 @@ class DB:
         try:
             cursor.execute(SELECT_USERS.format(user=username))
             response = cursor.fetchall()
+
             data = json.dumps({"username": response[0][0], "colour": response[0][1]})
-            print(data)
-            return data
+            # print(data)
+            if response:
+                return data
+            return None
         except psycopg2.errors.Error as e:
             print("Psycopg Error: ", e)
             return None
@@ -197,7 +242,7 @@ class DB:
         try:
             cursor.execute(
                 INSERT_QUERY_MESSAGES.format(
-                    se=sender, rec=recipient, stat=status, type_=type, cont=content
+                    sen=sender, rec=recipient, stat=status, type_=type, cont=content
                 )
             )
             self.connection.commit()
@@ -205,6 +250,37 @@ class DB:
         except Exception as e:
             self.connection.rollback()
             print("Exception: ", e)
+            traceback.print_exc()
+            return False
+
+    def upload_group_message(
+        self,
+        sender: str,
+        recipient: str,
+        status: str,
+        type: str,
+        content: str,
+        group_: str,
+    ):
+        cursor = self.connection.cursor()
+        recipient = recipient.replace('"', "")
+        try:
+            cursor.execute(
+                INSERT_QUERY_MESSAGES.format(
+                    sen=sender,
+                    rec=recipient,
+                    stat=status,
+                    type_=type,
+                    cont=content,
+                    grp=group_,
+                )
+            )
+            self.connection.commit()
+            return True
+        except Exception as e:
+            self.connection.rollback()
+            print("Exception: ", e)
+            traceback.print_exc()
             return False
 
     def retrieve_unread_messages(self, username: str):
@@ -213,15 +289,29 @@ class DB:
             cursor.execute(SELECT_MESSAGES_UNREAD.format(r=username))
             response = cursor.fetchall()
             data = {}
-            for i in response:
+            for i in range(len(response)):
                 data.update({i: response[i]})
-
+            self.update_unread(username)
             return data
         except psycopg2.errors.Error as e:
             print("Database Error: ", e)
             return None
         except Exception as e:
             print("Exception e", e)
+            return None
+
+    def update_unread(self, username: str):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(UPDATE_UNREAD.format(r=username))
+            self.connection.commit()
+            return True
+        except psycopg2.errors.Error as e:
+            self.connection.rollback()
+            print("Psycopg Error", e)
+        except Exception as e:
+            self.connection.rollback()
+            print("Exception: ", e)
             return None
 
     def retrieve_messages(self, username: str, sender: str):
@@ -241,7 +331,8 @@ class DB:
 
 def main():
     d = DB()
-    print(d.retrieve_all_users())
+    print(d.retrieve_unread_messages("chi-chi"))
+    d.update_unread("wyrm")
 
 
 # print(__name__)
