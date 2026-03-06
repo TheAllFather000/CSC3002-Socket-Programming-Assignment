@@ -220,6 +220,8 @@ def presence_ping(username):
 if __name__ == "__main__":
     threading.Thread(target=receive, daemon=True).start()
 
+    print("Please enter a command (login, create_account, create_group, private, message_group, add_member, file, ping, logout)")
+    
     while True:
         user_input = input("")
 
