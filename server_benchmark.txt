@@ -1,0 +1,20 @@
+[2026-03-09 18:28:56]  event=login  user=alice  status=ok
+[2026-03-09 18:28:56]  event=logout  user=alice
+[2026-03-09 18:30:46]  event=login  user=bob  status=ok
+[2026-03-09 18:30:46]  event=logout  user=bob
+[2026-03-09 18:38:26]  event=login  user=chi  status=fail
+[2026-03-09 18:38:26]  event=logout  user=chi
+[2026-03-09 18:38:54]  event=login  user=phat  status=fail
+[2026-03-09 18:38:54]  event=logout  user=phat
+[2026-03-09 18:41:13]  event=login  user=alice  status=ok
+[2026-03-09 18:41:13]  event=logout  user=alice
+[2026-03-09 18:41:42]  event=login  user=bob  status=ok
+[2026-03-09 18:41:42]  event=logout  user=bob
+[2026-03-09 18:52:13]  event=login  user=alice  status=ok
+[2026-03-09 18:52:13]  event=logout  user=alice
+[2026-03-09 18:52:43]  event=login  user=bob  status=ok
+[2026-03-09 18:52:43]  event=logout  user=bob
+[2026-03-09 22:27:22]  event=login  user=alice  status=ok
+[2026-03-09 22:27:48]  event=login  user=bob  status=ok
+[2026-03-09 22:28:01]  event=msg_relay  from=alice  to=bob  size=3 chars  latency=0.00 ms
+[2026-03-09 22:28:15]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51

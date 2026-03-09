@@ -1,0 +1,3 @@
+[2026-03-09 18:28:57]  event=login  user=alice  status=success
+[2026-03-09 18:30:47]  event=login  user=bob  status=success
+[2026-03-09 22:28:15]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0244 MB/s
