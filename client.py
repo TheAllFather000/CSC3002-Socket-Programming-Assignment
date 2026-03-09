@@ -32,6 +32,14 @@ logged_in = False
 running = True
 
 
+# Thread safe printing (prevents mixed terminal output)
+print_lock = threading.Lock()
+
+def safe_print(*args, **kwargs):
+    with print_lock:
+        print(*args, **kwargs)
+
+
 # Colour (messages + file transfers only)
 
 COLOURS = {
@@ -97,7 +105,7 @@ def file_listener():
     file_server.bind(('0.0.0.0', file_listen_port))
     file_server.listen(5)
 
-    print(f"[File listener running on port {file_listen_port}]")
+    safe_print(f"[File listener running on port {file_listen_port}]")
 
     while running:
         try:
@@ -128,7 +136,7 @@ def receive_file(peer_sock, peer_addr):
         filename, filesize, expected_md5 = header_line.decode().split('|')
         filesize = int(filesize)
 
-        print(coloured(f"\n[File incoming] '{filename}' ({filesize} bytes) from {peer_addr[0]}"))
+        safe_print(coloured(f"\n[File incoming] '{filename}' ({filesize} bytes) from {peer_addr[0]}"))
 
         save_path = f"received_{filename}"
 
@@ -156,7 +164,7 @@ def receive_file(peer_sock, peer_addr):
 
         if md5_hash.hexdigest() == expected_md5:
 
-            print(coloured(f"[File received] Saved as '{save_path}' — MD5 verified."))
+            safe_print(coloured(f"[File received] Saved as '{save_path}' — MD5 verified."))
 
             log_bench("file_receive",
                       f"file={filename} from={peer_addr[0]} status=ok",
@@ -167,7 +175,7 @@ def receive_file(peer_sock, peer_addr):
 
             os.remove(save_path)
 
-            print(coloured("[File error] MD5 mismatch — file corrupted."))
+            safe_print(coloured("[File error] MD5 mismatch — file corrupted."))
 
     finally:
 
@@ -210,11 +218,11 @@ def send_file(peer_ip, peer_port, filepath):
 
         duration = time.time() - t_start
 
-        print(coloured(f"[File sent] '{filename}' -> {peer_ip}:{peer_port}"))
+        safe_print(coloured(f"[File sent] '{filename}' -> {peer_ip}:{peer_port}"))
 
     except Exception as e:
 
-        print("File send error:", e)
+        safe_print("File send error:", e)
 
     finally:
 
@@ -246,25 +254,25 @@ def receive():
 
                     if not logged_in:
                         logged_in = True
-                        print("[Auth] Login successful!")
+                        safe_print("[Auth] Login successful!")
                         threading.Thread(target=file_listener, daemon=True).start()
                         threading.Thread(target=presence_ping, args=(username,), daemon=True).start()
 
                 elif msg_type == "login_fail":
 
-                    print("[Auth] Login failed.")
+                    safe_print("[Auth] Login failed.")
 
                 elif msg_type == "account_created":
 
-                    print("[Auth] Account created successfully.")
+                    safe_print("[Auth] Account created successfully.")
 
                 elif msg_type == "text":
 
-                    print(coloured(f"[{data['sender']}]: {data['body']}"))
+                    safe_print(coloured(f"[{data['sender']}]: {data['body']}"))
 
                 elif msg_type == "system":
 
-                    print(f"[SYSTEM]: {data['body']}")
+                    safe_print(f"[SYSTEM]: {data['body']}")
 
                 elif msg_type == "file_ready":
 
@@ -280,11 +288,11 @@ def receive():
 
             except:
 
-                print(message)
+                safe_print(message)
 
         except:
 
-            print("Disconnected from server.")
+            safe_print("Disconnected from server.")
             break
 
 
