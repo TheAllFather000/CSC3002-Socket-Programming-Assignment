@@ -39,28 +39,26 @@ def safe_print(*args, **kwargs):
         print(*args, **kwargs)
 
 
-# ANSI helpers
+#  ANSI helpers 
 
 RESET = "\033[0m"
 BOLD  = "\033[1m"
-CYAN  = "\033[96m"   # bright cyan – styled input prompts
-BLUE  = "\033[34m"   # box-drawing chrome
+CYAN  = "\033[96m"   # bright cyan – prompt username
+BLUE  = "\033[94m"   # bright blue – styled input prompts & box-drawing chrome
 
 def _c(text, *codes):
     """Wrap text with one or more ANSI codes then reset."""
     return "".join(codes) + text + RESET
 
 
-# Colour (messages + file transfers only)
+#  Colour (messages + file transfers only) 
 
 COLOURS = {
     "1": (colorist.Color.RED,     "\033[91m", "Red"),
     "2": (colorist.Color.GREEN,   "\033[92m", "Green"),
     "3": (colorist.Color.YELLOW,  "\033[93m", "Yellow"),
-    "4": (colorist.Color.BLUE,    "\033[94m", "Blue"),
-    "5": (colorist.Color.MAGENTA, "\033[95m", "Magenta"),
-    "6": (colorist.Color.CYAN,    "\033[96m", "Cyan"),
-    "7": (colorist.Color.WHITE,   "\033[97m", "White"),
+    "4": (colorist.Color.MAGENTA, "\033[95m", "Magenta"),
+    "5": (colorist.Color.CYAN,    "\033[96m", "Cyan"),
 }
 
 user_colour = ""   # set at login; empty string = no colour
@@ -367,7 +365,7 @@ def pick_colour():
     print(_c("  └" + "─" * 41 + "┘", BLUE))
 
     print("NAME: " + username)
-    choice = input(_c("  Enter number: ", CYAN))
+    choice = input(_c("  Enter number: ", BLUE))
 
     if choice in COLOURS:
         user_colour = COLOURS[choice][0]
@@ -377,12 +375,29 @@ def pick_colour():
         print("No colour selected.")
 
 
+#  ASCII banner 
+
+BANNER = r"""
+  #####   #####  #     #    #    #######
+ #     # #     # #     #   # #      #
+ #       #       #     #  #   #     #
+  #####  #       ####### #     #    #
+       # #       #     # #######    #
+ #     # #     # #     # #     #    #
+  #####   #####  #     # #     #    #
+"""
+
+def print_banner():
+    print(_c(BANNER, CYAN, BOLD))
+
+
 #  Main loop 
 
 if __name__ == "__main__":
 
     threading.Thread(target=receive, daemon=True).start()
 
+    print_banner()
     print_help()
 
     while True:
@@ -392,8 +407,8 @@ if __name__ == "__main__":
 
         if user_input.startswith("login"):
 
-            username = input(_c("  Username: ", CYAN))
-            password = input(_c("  Password: ", CYAN))
+            username = input(_c("  Username: ", BLUE))
+            password = input(_c("  Password: ", BLUE))
 
             print(username)
             pick_colour()
@@ -409,8 +424,8 @@ if __name__ == "__main__":
 
         elif user_input.startswith("create_account"):
 
-            username = input(_c("  Username: ", CYAN))
-            password = input(_c("  Password: ", CYAN))
+            username = input(_c("  Username: ", BLUE))
+            password = input(_c("  Password: ", BLUE))
 
             payload = json.dumps({
                 "command": "create_account",
@@ -422,8 +437,8 @@ if __name__ == "__main__":
 
         elif user_input.startswith("private"):
 
-            recipient = input(_c("  Recipient: ", CYAN))
-            msg       = input(_c("  Message: ", CYAN))
+            recipient = input(_c("  Recipient: ", BLUE))
+            msg       = input(_c("  Message: ", BLUE))
 
             payload = json.dumps({
                 "command": "private", "sender": username, "username": username,
@@ -436,8 +451,8 @@ if __name__ == "__main__":
 
         elif user_input.startswith("file"):
 
-            filepath = input(_c("  Filepath: ", CYAN))
-            receiver = input(_c("  Receiver: ", CYAN))
+            filepath = input(_c("  Filepath: ", BLUE))
+            receiver = input(_c("  Receiver: ", BLUE))
 
             if not os.path.exists(filepath):
                 print("File not found.")
@@ -460,14 +475,14 @@ if __name__ == "__main__":
 
         elif user_input.startswith("create_group"):
 
-            group = input(_c("  Group name: ", CYAN))
+            group = input(_c("  Group name: ", BLUE))
             payload = json.dumps({"command": "create_group", "username": username, "group": group})
             client.send(payload.encode())
 
         elif user_input.startswith("message_group"):
 
-            group = input(_c("  Group name: ", CYAN))
-            msg   = input(_c("  Message: ", CYAN))
+            group = input(_c("  Group name: ", BLUE))
+            msg   = input(_c("  Message: ", BLUE))
             payload = json.dumps({
                 "command": "message_group", "sender": username,
                 "group": group, "body": msg, "sent_at": time.time()
@@ -476,8 +491,8 @@ if __name__ == "__main__":
 
         elif user_input.startswith("add_member"):
 
-            group  = input(_c("  Group name: ", CYAN))
-            member = input(_c("  Username: ", CYAN))
+            group  = input(_c("  Group name: ", BLUE))
+            member = input(_c("  Username: ", BLUE))
             payload = json.dumps({"command": "add_member", "username": username,
                                   "group": group, "member": member})
             client.send(payload.encode())

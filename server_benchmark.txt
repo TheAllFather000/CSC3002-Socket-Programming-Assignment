@@ -44,3 +44,5 @@
 [2026-03-10 12:39:08]  event=logout  user=phat
 [2026-03-10 12:41:49]  event=logout  user=bob
 [2026-03-10 18:06:12]  event=login  user=alice  status=ok
+[2026-03-10 18:34:32]  event=logout  user=alice
+[2026-03-10 18:35:23]  event=login  user=alice  status=ok
