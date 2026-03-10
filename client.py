@@ -270,6 +270,15 @@ def receive():
 
                     safe_print(coloured(f"[{data['sender']}]: {data['body']}"))
 
+                elif msg_type == "group_message":
+
+                    safe_print(coloured(f"[Group:{data['group']}] {data['sender']}: {data['body']}"))
+
+                elif msg_type == "ping_reply":
+
+                    latency = (time.time() - data.get("sent_at", time.time())) * 1000
+                    safe_print(f"[Ping] Server responded in {latency:.2f} ms")
+
                 elif msg_type == "system":
 
                     safe_print(f"[SYSTEM]: {data['body']}")
@@ -377,6 +386,18 @@ if __name__ == "__main__":
 
             client.send(payload.encode())
 
+        elif user_input.startswith("create_group"):
+
+            group = input("Group name: ")
+
+            payload = json.dumps({
+                "command": "create_group",
+                "creator": username,
+                "group": group
+            })
+
+            client.send(payload.encode())
+
         elif user_input.startswith("private"):
 
             recipient = input("Recipient: ")
@@ -386,6 +407,45 @@ if __name__ == "__main__":
                 "command": "private", "sender": username, "username": username,
                 "recipient": recipient, "receiver": recipient,
                 "message": msg, "body": msg,
+                "sent_at": time.time()
+            })
+
+            client.send(payload.encode())
+
+        elif user_input.startswith("message_group"):
+
+            group = input("Group name: ")
+            msg = input("Message: ")
+
+            payload = json.dumps({
+                "command": "message_group",
+                "sender": username,
+                "group": group,
+                "body": msg,
+                "sent_at": time.time()
+            })
+
+            client.send(payload.encode())
+
+        elif user_input.startswith("add_member"):
+
+            group = input("Group name: ")
+            member = input("Username to add: ")
+
+            payload = json.dumps({
+                "command": "add_member",
+                "group": group,
+                "member": member,
+                "added_by": username
+            })
+
+            client.send(payload.encode())
+
+        elif user_input.startswith("ping"):
+
+            payload = json.dumps({
+                "command": "ping",
+                "username": username,
                 "sent_at": time.time()
             })
 

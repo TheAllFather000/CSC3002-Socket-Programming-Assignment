@@ -25,3 +25,14 @@
 [2026-03-09 22:52:12]  event=account_created  user=chi
 [2026-03-09 22:53:35]  event=logout  user=chi
 [2026-03-09 22:55:01]  event=logout  user=bob
+[2026-03-10 09:27:50]  event=login  user=alice  status=ok
+[2026-03-10 09:28:18]  event=login  user=bob  status=ok
+[2026-03-10 09:28:49]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51
+[2026-03-10 10:11:33]  event=login  user=alice  status=ok
+[2026-03-10 10:11:54]  event=login  user=bob  status=ok
+[2026-03-10 10:12:07]  event=create_group  group=  creator=alice  members=['alice']
+[2026-03-10 10:12:24]  event=group_msg_relay  from=alice  group=  size=3 chars  latency=0.00 ms
+[2026-03-10 10:12:45]  event=group_msg_relay  from=alice  group=  size=6 chars  latency=0.00 ms
+[2026-03-10 10:13:01]  event=ping  user=alice  latency=0.00 ms
+[2026-03-10 10:13:22]  event=logout  user=alice
+[2026-03-10 10:13:31]  event=logout  user=bob
