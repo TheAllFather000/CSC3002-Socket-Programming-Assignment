@@ -31,6 +31,15 @@ pending_files = {}
 logged_in = False
 running = True
 
+#colour_list = {
+              # 'Red': {'r': 255, 'g': 0, 'b': 0}, 
+              # 'Green': {'r': 0, 'g':100, 'b': 0}, 
+              # 'Blue': {'r':0, 'b':100, 'g': 0}, 
+              # 'Yellow': {'r': 255, 'g': 255, 'b': 0},
+              # 'Cyan' : {'r': 0, 'g': 255, 'b': 255},
+               #'Magenta': {'r': 255, 'g': 0, 'b': 255},
+
+              # }
 
 # Thread safe printing (prevents mixed terminal output)
 print_lock = threading.Lock()
@@ -105,7 +114,7 @@ def file_listener():
     file_server.bind(('0.0.0.0', file_listen_port))
     file_server.listen(5)
 
-    safe_print(f"[File listener running on port {file_listen_port}]")
+    #safe_print(f"[File listener running on port {file_listen_port}]")
 
     while running:
         try:
@@ -235,7 +244,7 @@ def receive():
 
     global logged_in
 
-    while running:
+    while True:
 
         try:
 
@@ -256,12 +265,11 @@ def receive():
                         logged_in = True
                         safe_print("[Auth] Login successful!")
                         threading.Thread(target=file_listener, daemon=True).start()
-                        threading.Thread(target=presence_ping, args=(username,), daemon=True).start()
+                        threading.Thread(target=presence_ping, daemon=True).start()
 
                 elif msg_type == "login_fail":
 
                     safe_print("[Auth] Login failed.")
-
                 elif msg_type == "account_created":
 
                     safe_print("[Auth] Account created successfully.")
@@ -269,15 +277,6 @@ def receive():
                 elif msg_type == "text":
 
                     safe_print(coloured(f"[{data['sender']}]: {data['body']}"))
-
-                elif msg_type == "group_message":
-
-                    safe_print(coloured(f"[Group:{data['group']}] {data['sender']}: {data['body']}"))
-
-                elif msg_type == "ping_reply":
-
-                    latency = (time.time() - data.get("sent_at", time.time())) * 1000
-                    safe_print(f"[Ping] Server responded in {latency:.2f} ms")
 
                 elif msg_type == "system":
 
@@ -306,17 +305,15 @@ def receive():
 
 
 # UDP presence ping
-def presence_ping(uname):
+def presence_ping():
 
     udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     while running:
 
-        payload = json.dumps({"type": "ping", "user": uname})
-
+        payload = json.dumps({"type": "ping", "user": username})
         udp_sock.sendto(payload.encode(), (host, udp_port))
-
-        time.sleep(0.1) # evey 100ms
+        time.sleep(5) # evey 100ms
 
 
 # Colour picker  (called once at login)
@@ -333,7 +330,7 @@ def pick_colour():
     print("  0) No colour")
 
     choice = input("Enter number: ").strip()
-
+    print("NAME: "+ username)
     if choice in COLOURS:
 
         user_colour = COLOURS[choice][0]
@@ -350,11 +347,9 @@ def pick_colour():
 if __name__ == "__main__":
 
     threading.Thread(target=receive, daemon=True).start()
-
-    print("Please enter a command (login, create_account, create_group, private, message_group, add_member, file, ping, logout)")
-
     while True:
-
+        time.sleep(0.5)
+        print("Please enter a command (login, create_account, create_group, private, message_group, add_member, file, ping, logout)")
         user_input = input()
 
         if user_input.startswith("login"):
@@ -362,6 +357,8 @@ if __name__ == "__main__":
             username = input("Username: ")
             password = input("Password: ")
 
+
+            print(username)
             pick_colour()
 
             payload = json.dumps({
@@ -386,18 +383,6 @@ if __name__ == "__main__":
 
             client.send(payload.encode())
 
-        elif user_input.startswith("create_group"):
-
-            group = input("Group name: ")
-
-            payload = json.dumps({
-                "command": "create_group",
-                "creator": username,
-                "group": group
-            })
-
-            client.send(payload.encode())
-
         elif user_input.startswith("private"):
 
             recipient = input("Recipient: ")
@@ -407,45 +392,6 @@ if __name__ == "__main__":
                 "command": "private", "sender": username, "username": username,
                 "recipient": recipient, "receiver": recipient,
                 "message": msg, "body": msg,
-                "sent_at": time.time()
-            })
-
-            client.send(payload.encode())
-
-        elif user_input.startswith("message_group"):
-
-            group = input("Group name: ")
-            msg = input("Message: ")
-
-            payload = json.dumps({
-                "command": "message_group",
-                "sender": username,
-                "group": group,
-                "body": msg,
-                "sent_at": time.time()
-            })
-
-            client.send(payload.encode())
-
-        elif user_input.startswith("add_member"):
-
-            group = input("Group name: ")
-            member = input("Username to add: ")
-
-            payload = json.dumps({
-                "command": "add_member",
-                "group": group,
-                "member": member,
-                "added_by": username
-            })
-
-            client.send(payload.encode())
-
-        elif user_input.startswith("ping"):
-
-            payload = json.dumps({
-                "command": "ping",
-                "username": username,
                 "sent_at": time.time()
             })
 

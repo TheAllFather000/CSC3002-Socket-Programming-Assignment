@@ -239,7 +239,7 @@ def handle_client(sock, addr):
                 if sent_at:
                     latency = (t_recv - sent_at) * 1000
                     log_bench("ping", f"user={uname}", latency_ms=latency)
-
+                print("[Server] Ping from user: "+current_user)
         except Exception as e:
             print(f"[Error] client {addr}: {e}")
             break
@@ -264,7 +264,7 @@ def udp_listener():
             data, addr = udp_sock.recvfrom(1024)
             payload = json.loads(data.decode('ascii'))
             if payload.get("type") == "ping":
-                pass  # Presence acknowledged; could broadcast to friends
+                print("[Server] Pinged by: [USER]")  # Presence acknowledged; could broadcast to friends
         except Exception:
             pass
 
