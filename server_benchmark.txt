@@ -41,3 +41,6 @@
 [2026-03-10 12:23:44]  event=msg_relay  from=alice  to=bob  size=5 chars  latency=0.00 ms
 [2026-03-10 12:24:00]  event=account_created  user=phat
 [2026-03-10 12:25:32]  event=file_request_brokered  from=phat  to=bob  file=Can You Hear The Music.mp4  size=3554511
+[2026-03-10 12:39:08]  event=logout  user=phat
+[2026-03-10 12:41:49]  event=logout  user=bob
+[2026-03-10 18:06:12]  event=login  user=alice  status=ok
