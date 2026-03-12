@@ -8,6 +8,7 @@ import colorist
 
 #host = '196.47.211.33'
 host = '127.0.0.1'
+#host = 'schaat.duckdns.org'
 port = 5958
 
 # So we can run on the same machine without clashing
@@ -36,22 +37,23 @@ print_lock = threading.Lock()
 
 def safe_print(*args, **kwargs):
     with print_lock:
+        print("\r", end="")
         print(*args, **kwargs)
 
 
-#  ANSI helpers 
+# ANSI helpers
 
 RESET = "\033[0m"
 BOLD  = "\033[1m"
-CYAN  = "\033[96m"   # bright cyan – prompt username
-BLUE  = "\033[94m"   # bright blue – styled input prompts & box-drawing chrome
+CYAN  = "\033[96m"   # bright cyan  – input labels & swatch numbers
+BLUE  = "\033[94m"   # bright blue  – box-drawing chrome & prompt arrow
 
 def _c(text, *codes):
     """Wrap text with one or more ANSI codes then reset."""
     return "".join(codes) + text + RESET
 
 
-#  Colour (messages + file transfers only) 
+# Colour (messages + file transfers only)
 
 COLOURS = {
     "1": (colorist.Color.RED,     "\033[91m", "Red"),
@@ -61,25 +63,29 @@ COLOURS = {
     "5": (colorist.Color.CYAN,    "\033[96m", "Cyan"),
 }
 
-user_colour = ""   # set at login; empty string = no colour
-
+user_colour = ""
 
 def coloured(text):
     if user_colour:
         return f"{user_colour}{text}{RESET}"
     return text
 
+def render_coloured(text, ansi_code):
+    if ansi_code:
+        return f"{ansi_code}{text}{RESET}"
+    return text
 
-#  Dynamic prompt 
+
+# Dynamic prompt
 
 def prompt():
-    """'@username ❯ ' once logged in, plain '> ' otherwise."""
+    """Plain '> ' before login; '@username ❯ ' in cyan/blue after."""
     if username:
         return _c(f"@{username}", CYAN, BOLD) + _c(" ❯ ", BLUE, BOLD)
     return "> "
 
 
-#  Styled command table 
+# Styled command table
 
 def print_help():
     cmds = [
@@ -102,15 +108,16 @@ def print_help():
     print()
 
 
-#  Benchmarking / performance logging 
+# Benchmarking / performance logging
 
 BENCH_FILE = "benchmark_log.txt"
 bench_lock = threading.Lock()
 
 def log_bench(event: str, detail: str, latency_ms: float = None,
               filesize_bytes: int = None, duration_s: float = None):
-    """Append one benchmark record to benchmark_log.txt."""
+
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
     throughput = ""
     if filesize_bytes and duration_s and duration_s > 0:
         mb_s = (filesize_bytes / (1024 * 1024)) / duration_s
@@ -126,7 +133,7 @@ def log_bench(event: str, detail: str, latency_ms: float = None,
             f.write(line)
 
 
-#  TCP socket 
+# TCP socket
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -137,7 +144,7 @@ except Exception as e:
     sys.exit()
 
 
-#  File listener thread for incoming P2P file transfers 
+# File listener thread for incoming P2P file transfers
 
 def file_listener():
 
@@ -216,11 +223,10 @@ def receive_file(peer_sock, peer_addr):
             safe_print(coloured("[File error] MD5 mismatch — file corrupted."))
 
     finally:
-
         peer_sock.close()
 
 
-#  File sender 
+# File sender
 
 def send_file(peer_ip, peer_port, filepath):
 
@@ -238,8 +244,6 @@ def send_file(peer_ip, peer_port, filepath):
         file_md5 = md5_hash.hexdigest()
 
         peer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        peer_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
-        peer_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
 
         peer_sock.connect((peer_ip, int(peer_port)))
 
@@ -259,9 +263,10 @@ def send_file(peer_ip, peer_port, filepath):
 
         safe_print(coloured(f"[File sent] '{filename}' -> {peer_ip}:{peer_port}"))
 
-    except Exception as e:
-
-        safe_print("File send error:", e)
+        log_bench("file_send",
+                  f"file={filename} to={peer_ip}:{peer_port} status=ok",
+                  filesize_bytes=filesize,
+                  duration_s=duration)
 
     finally:
 
@@ -269,24 +274,64 @@ def send_file(peer_ip, peer_port, filepath):
             peer_sock.close()
 
 
-#  Server message receiver 
+# Server message receiver
 
 def receive():
 
     global logged_in
 
-    while True:
+    buf = ""
+
+    def iter_json(chunk):
+        nonlocal buf
+        buf += chunk
+        while buf:
+            buf = buf.lstrip()
+            if not buf:
+                break
+            if buf[0] != "{":
+                idx = buf.find("{")
+                if idx == -1:
+                    buf = ""
+                else:
+                    buf = buf[idx:]
+                continue
+
+            depth, in_str, escape = 0, False, False
+            for i, ch in enumerate(buf):
+                if escape:
+                    escape = False
+                    continue
+                if ch == "\\" and in_str:
+                    escape = True
+                    continue
+                if ch == '"':
+                    in_str = not in_str
+                    continue
+                if in_str:
+                    continue
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        yield json.loads(buf[:i+1])
+                        buf = buf[i+1:]
+                        break
+            else:
+                break
+
+    while running:
 
         try:
 
-            message = client.recv(4096).decode()
+            raw = client.recv(4096).decode("ascii", errors="replace")
 
-            if not message:
+            if not raw:
                 break
 
-            try:
+            for data in iter_json(raw):
 
-                data     = json.loads(message)
                 msg_type = data.get("command", "")
 
                 if msg_type == "login_success":
@@ -294,24 +339,31 @@ def receive():
                     if not logged_in:
                         logged_in = True
                         safe_print("[Auth] Login successful!")
+                        safe_print(_c("  Please select a command (type 'help' or '?' to see options).", CYAN))
+                        print(prompt(), end="", flush=True)
                         threading.Thread(target=file_listener, daemon=True).start()
                         threading.Thread(target=presence_ping, daemon=True).start()
 
                 elif msg_type == "login_fail":
 
-                    safe_print("[Auth] Login failed.")
+                    safe_print("[Auth] Login failed. Check your credentials.")
 
                 elif msg_type == "account_created":
 
                     safe_print("[Auth] Account created successfully.")
 
-                elif msg_type == "text":
-
-                    safe_print(coloured(f"[{data['sender']}]: {data['body']}"))
-
                 elif msg_type == "system":
 
-                    safe_print(f"[SYSTEM]: {data['body']}")
+                    safe_print(f"[SYSTEM]: {data.get('body', '')}")
+
+                elif msg_type == "text":
+
+                    sender = data.get("sender", "?")
+                    body   = data.get("body", "")
+                    ansi   = data.get("colour", "")
+
+                    safe_print(render_coloured(f"[{sender}]: {body}", ansi))
+                    print(prompt(), end="", flush=True)
 
                 elif msg_type == "file_ready":
 
@@ -325,17 +377,14 @@ def receive():
                             daemon=True
                         ).start()
 
-            except:
-
-                safe_print(message)
+                    print(prompt(), end="", flush=True)
 
         except:
-
             safe_print("Disconnected from server.")
             break
 
 
-#  UDP presence ping 
+# UDP presence ping
 
 def presence_ping():
 
@@ -348,34 +397,33 @@ def presence_ping():
         time.sleep(5)
 
 
-#  Colour picker (called once at login) 
+# Colour picker (called once at login)
 
 def pick_colour():
 
     global user_colour
 
-    print("\nChoose a colour for your messages and file transfers:")
-    print(_c("  ┌─ Colours " + "─" * 30 + "┐", BLUE))
+    print()
+    print(_c("  ┌─ Choose your message colour " + "─" * 20 + "┐", BLUE))
 
     for k, (colour_code, ansi_code, name) in COLOURS.items():
         swatch = f"{ansi_code}■■■{RESET}"
         print(_c("  │  ", BLUE) + f"  {_c(k, CYAN, BOLD)})  {swatch}  {ansi_code}{name}{RESET}")
 
     print(_c("  │  ", BLUE) + f"  {_c('0', CYAN, BOLD)})  No colour")
-    print(_c("  └" + "─" * 41 + "┘", BLUE))
+    print(_c("  └" + "─" * 50 + "┘", BLUE))
 
-    print("NAME: " + username)
-    choice = input(_c("  Enter number: ", BLUE))
+    choice = input(_c("  Enter number: ", CYAN))
 
     if choice in COLOURS:
-        user_colour = COLOURS[choice][0]
-        print(f"Colour set to {COLOURS[choice][2]}.")
+        user_colour = COLOURS[choice][1]
+        print(f"  Colour set to {COLOURS[choice][2]}.")
     else:
         user_colour = ""
-        print("No colour selected.")
+        print("  No colour selected.")
 
 
-#  ASCII banner 
+# ASCII banner
 
 BANNER = r"""
   #####   #####  #     #    #    #######
@@ -391,7 +439,7 @@ def print_banner():
     print(_c(BANNER, CYAN, BOLD))
 
 
-#  Main loop 
+# Main loop
 
 if __name__ == "__main__":
 
@@ -401,31 +449,42 @@ if __name__ == "__main__":
     print_help()
 
     while True:
-        time.sleep(0.5)
 
-        user_input = input(prompt())
+        try:
+            user_input = input(prompt()).strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
 
+        if not user_input:
+            print(_c("  Type 'help' or '?' to see available commands.", CYAN))
+            continue
+
+        # login
         if user_input.startswith("login"):
 
-            username = input(_c("  Username: ", BLUE))
-            password = input(_c("  Password: ", BLUE))
+            username = input(_c("  Username: ", CYAN))
+            password = input(_c("  Password: ", CYAN))
 
-            print(username)
             pick_colour()
 
             payload = json.dumps({
                 "command": "login",
                 "username": username,
                 "password": password,
-                "file_listen_port": file_listen_port
+                "file_listen_port": file_listen_port,
+                "colour": user_colour
             })
 
             client.send(payload.encode())
 
+        # create_account
         elif user_input.startswith("create_account"):
 
-            username = input(_c("  Username: ", BLUE))
-            password = input(_c("  Password: ", BLUE))
+            username = input(_c("  Username: ", CYAN))
+            password = input(_c("  Password: ", CYAN))
+
+            pick_colour()
 
             payload = json.dumps({
                 "command": "create_account",
@@ -435,27 +494,78 @@ if __name__ == "__main__":
 
             client.send(payload.encode())
 
-        elif user_input.startswith("private"):
+        # create_group
+        elif user_input.startswith("create_group"):
 
-            recipient = input(_c("  Recipient: ", BLUE))
-            msg       = input(_c("  Message: ", BLUE))
+            group = input(_c("  Group name: ", CYAN))
 
             payload = json.dumps({
-                "command": "private", "sender": username, "username": username,
-                "recipient": recipient, "receiver": recipient,
-                "message": msg, "body": msg,
-                "sent_at": time.time()
+                "command": "create_group",
+                "username": username,
+                "group": group
             })
 
             client.send(payload.encode())
 
+        # private message
+        elif user_input.startswith("private"):
+
+            recipient = input(_c("  Recipient: ", CYAN))
+            msg       = input(_c("  Message: ", CYAN))
+
+            payload = json.dumps({
+                "command": "private",
+                "sender": username,
+                "recipient": recipient,
+                "body": msg,
+                "colour": user_colour,
+                "sent_at": time.time()
+            })
+
+            client.send(payload.encode())
+            safe_print(f"[{username}] -> [{recipient}]: {msg}")
+
+        # message_group
+        elif user_input.startswith("message_group"):
+
+            group = input(_c("  Group name: ", CYAN))
+            msg   = input(_c("  Message: ", CYAN))
+
+            payload = json.dumps({
+                "command": "message_group",
+                "sender": username,
+                "group": group,
+                "body": msg,
+                "colour": user_colour,
+                "sent_at": time.time()
+            })
+
+            client.send(payload.encode())
+            safe_print(f"[{username}] -> [{group}]: {msg}")
+
+        # add_member
+        elif user_input.startswith("add_member"):
+
+            group  = input(_c("  Group name: ", CYAN))
+            member = input(_c("  Username to add: ", CYAN))
+
+            payload = json.dumps({
+                "command": "add_member",
+                "username": username,
+                "group": group,
+                "member": member
+            })
+
+            client.send(payload.encode())
+
+        # file transfer
         elif user_input.startswith("file"):
 
-            filepath = input(_c("  Filepath: ", BLUE))
-            receiver = input(_c("  Receiver: ", BLUE))
+            filepath = input(_c("  Filepath: ", CYAN))
+            receiver = input(_c("  Receiver: ", CYAN))
 
             if not os.path.exists(filepath):
-                print("File not found.")
+                print(_c("  [Error] File not found.", CYAN))
                 continue
 
             pending_files[receiver] = filepath
@@ -470,42 +580,26 @@ if __name__ == "__main__":
             })
 
             client.send(payload.encode())
-
             print(coloured(f"[File] Requesting transfer of '{os.path.basename(filepath)}' to {receiver}..."))
+            print(prompt(), end="", flush=True)
 
-        elif user_input.startswith("create_group"):
-
-            group = input(_c("  Group name: ", BLUE))
-            payload = json.dumps({"command": "create_group", "username": username, "group": group})
-            client.send(payload.encode())
-
-        elif user_input.startswith("message_group"):
-
-            group = input(_c("  Group name: ", BLUE))
-            msg   = input(_c("  Message: ", BLUE))
-            payload = json.dumps({
-                "command": "message_group", "sender": username,
-                "group": group, "body": msg, "sent_at": time.time()
-            })
-            client.send(payload.encode())
-
-        elif user_input.startswith("add_member"):
-
-            group  = input(_c("  Group name: ", BLUE))
-            member = input(_c("  Username: ", BLUE))
-            payload = json.dumps({"command": "add_member", "username": username,
-                                  "group": group, "member": member})
-            client.send(payload.encode())
-
+        # ping
         elif user_input.startswith("ping"):
 
-            payload = json.dumps({"command": "ping", "username": username, "sent_at": time.time()})
+            payload = json.dumps({
+                "command": "ping",
+                "username": username,
+                "sent_at": time.time()
+            })
+
             client.send(payload.encode())
 
+        # help
         elif user_input in ("help", "?", "h"):
 
             print_help()
 
+        # logout
         elif user_input == "logout":
 
             payload = json.dumps({
@@ -517,4 +611,13 @@ if __name__ == "__main__":
 
             running = False
             client.close()
-            break
+
+            # Give daemon threads a moment to finish before the interpreter
+            # shuts down, preventing the buffered stdout lock error.
+            time.sleep(0.3)
+            os._exit(0)
+
+        # unknown command
+        else:
+
+            print(_c(f"  Unknown command '{user_input}'. Type 'help' or '?' for a list of commands.", CYAN))

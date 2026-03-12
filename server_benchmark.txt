@@ -46,3 +46,96 @@
 [2026-03-10 18:06:12]  event=login  user=alice  status=ok
 [2026-03-10 18:34:32]  event=logout  user=alice
 [2026-03-10 18:35:23]  event=login  user=alice  status=ok
+[2026-03-11 10:32:24]  event=login  user=alice  status=ok
+[2026-03-11 10:32:37]  event=login  user=bob  status=ok
+[2026-03-11 10:32:59]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51
+[2026-03-11 10:33:12]  event=msg_relay  from=alice  to=bob  size=6 chars  latency=0.00 ms
+[2026-03-11 10:33:32]  event=msg_relay  from=bob  to=alice  size=14 chars  latency=0.00 ms
+[2026-03-11 15:04:01]  event=login  user=alice  status=fail
+[2026-03-11 15:05:15]  event=login  user=alice  status=ok
+[2026-03-11 15:05:42]  event=login  user=bob  status=ok
+[2026-03-11 15:05:54]  event=msg_relay  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-11 15:10:17]  event=logout  user=alice
+[2026-03-11 15:10:41]  event=login  user=alice  status=ok
+[2026-03-11 15:10:48]  event=msg_relay  from=alice  to=bob  size=4 chars  latency=0.00 ms
+[2026-03-11 15:11:35]  event=logout  user=alice
+[2026-03-11 15:11:45]  event=logout  user=bob
+[2026-03-12 10:24:30]  event=login  user=alice  status=ok
+[2026-03-12 10:44:25]  event=login  user=alice  status=ok
+[2026-03-12 10:44:56]  event=login  user=bob  status=ok
+[2026-03-12 10:45:07]  event=msg_relay  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 11:01:26]  event=msg_relay  from=bob  to=alice  size=5 chars  latency=6.44 ms
+[2026-03-12 11:01:39]  event=msg_relay  from=alice  to=bob  size=6 chars  latency=71.40 ms
+[2026-03-12 11:04:16]  event=logout  user=bob
+[2026-03-12 11:04:26]  event=logout  user=alice
+[2026-03-12 11:05:13]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 11:05:59]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 11:06:10]  event=private_msg  from=alice  to=bob  size=5 chars  latency=1.55 ms
+[2026-03-12 11:44:28]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 11:44:57]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 11:45:11]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51 bytes
+[2026-03-12 11:58:11]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 12:01:01]  event=logout  user=alice
+[2026-03-12 12:01:09]  event=logout  user=None
+[2026-03-12 12:03:03]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 12:03:08]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 12:03:20]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 12:03:40]  event=private_msg  from=bob  to=alice  size=11 chars  latency=0.00 ms
+[2026-03-12 12:05:31]  event=logout  user=alice
+[2026-03-12 12:05:38]  event=logout  user=bob
+[2026-03-12 12:13:55]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 12:14:22]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 12:14:50]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 12:15:25]  event=file_request_brokered  from=bob  to=alice  file=test.txt  size=51 bytes
+[2026-03-12 13:02:22]  event=logout  user=alice
+[2026-03-12 13:02:31]  event=logout  user=bob
+[2026-03-12 13:05:47]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:06:22]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:06:33]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 13:07:02]  event=private_msg  from=bob  to=alice  size=13 chars  latency=0.00 ms
+[2026-03-12 13:07:17]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51 bytes
+[2026-03-12 13:07:37]  event=file_request_brokered  from=bob  to=alice  file=test.txt  size=51 bytes
+[2026-03-12 13:08:21]  event=account_created  user=chi-chi
+[2026-03-12 13:08:38]  event=login  user=chi-chi  addr=127.0.0.1  status=ok
+[2026-03-12 13:10:18]  event=logout  user=chi-chi
+[2026-03-12 13:10:24]  event=logout  user=bob
+[2026-03-12 13:13:43]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:14:07]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:14:20]  event=private_msg  from=alice  to=bob  size=5 chars  latency=2.75 ms
+[2026-03-12 13:14:43]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51 bytes
+[2026-03-12 13:15:57]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:16:23]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:16:29]  event=private_msg  from=bob  to=alice  size=5 chars  latency=0.00 ms
+[2026-03-12 13:16:46]  event=file_request_brokered  from=bob  to=alice  file=test.txt  size=51 bytes
+[2026-03-12 13:19:07]  event=private_msg  from=alice  to=bob  size=2 chars  latency=0.00 ms
+[2026-03-12 13:19:34]  event=private_msg  from=bob  to=alice  size=3 chars  latency=0.00 ms
+[2026-03-12 13:20:06]  event=logout  user=alice
+[2026-03-12 13:20:14]  event=logout  user=bob
+[2026-03-12 13:20:57]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:21:20]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:21:27]  event=private_msg  from=bob  to=alice  size=2 chars  latency=0.00 ms
+[2026-03-12 13:21:45]  event=private_msg  from=alice  to=bob  size=11 chars  latency=0.00 ms
+[2026-03-12 13:24:56]  event=private_msg  from=bob  to=alice  size=2 chars  latency=0.00 ms
+[2026-03-12 13:32:16]  event=logout  user=alice
+[2026-03-12 13:32:23]  event=logout  user=bob
+[2026-03-12 13:33:07]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:33:28]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:33:45]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 13:34:26]  event=private_msg  from=bob  to=bob  size=2 chars  latency=8.48 ms
+[2026-03-12 13:35:02]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 13:35:14]  event=private_msg  from=bob  to=alice  size=4 chars  latency=0.00 ms
+[2026-03-12 13:35:29]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 13:37:44]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:38:04]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:38:12]  event=private_msg  from=bob  to=alice  size=5 chars  latency=0.00 ms
+[2026-03-12 13:39:06]  event=logout  user=alice
+[2026-03-12 13:39:18]  event=logout  user=bob
+[2026-03-12 13:40:04]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:40:31]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:40:43]  event=private_msg  from=bob  to=alice  size=5 chars  latency=0.00 ms
+[2026-03-12 13:42:20]  event=file_request_brokered  from=alice  to=bob  file=test.txt  size=51 bytes
+[2026-03-12 13:54:59]  event=private_msg  from=bob  to=alice  size=5 chars  latency=5.20 ms
+[2026-03-12 13:56:16]  event=login  user=alice  addr=127.0.0.1  status=ok
+[2026-03-12 13:56:41]  event=login  user=bob  addr=127.0.0.1  status=ok
+[2026-03-12 13:56:50]  event=private_msg  from=alice  to=bob  size=5 chars  latency=0.00 ms
+[2026-03-12 13:58:38]  event=file_request_brokered  from=bob  to=alice  file=test.txt  size=51 bytes

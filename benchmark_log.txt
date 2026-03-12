@@ -4,3 +4,20 @@
 [2026-03-09 22:51:27]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0048 MB/s
 [2026-03-10 09:28:49]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes
 [2026-03-10 12:25:33]  event=file_receive  user=phat  file=Can You Hear The Music.mp4 from=127.0.0.1 status=ok  size=3554511 bytes  throughput=50.5556 MB/s
+[2026-03-11 10:32:59]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes
+[2026-03-12 11:45:11]  event=file_send  user=alice  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0037 MB/s
+[2026-03-12 11:45:11]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0147 MB/s
+[2026-03-12 12:15:25]  event=file_send  user=bob  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0060 MB/s
+[2026-03-12 12:15:25]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0052 MB/s
+[2026-03-12 13:07:17]  event=file_send  user=alice  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0043 MB/s
+[2026-03-12 13:07:17]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0167 MB/s
+[2026-03-12 13:07:37]  event=file_send  user=bob  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0060 MB/s
+[2026-03-12 13:07:37]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0120 MB/s
+[2026-03-12 13:14:43]  event=file_send  user=alice  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0067 MB/s
+[2026-03-12 13:14:43]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0062 MB/s
+[2026-03-12 13:16:46]  event=file_send  user=bob  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0321 MB/s
+[2026-03-12 13:16:46]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0020 MB/s
+[2026-03-12 13:42:20]  event=file_send  user=alice  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0062 MB/s
+[2026-03-12 13:42:20]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0019 MB/s
+[2026-03-12 13:58:38]  event=file_send  user=bob  file=test.txt to=127.0.0.1:6000 status=ok  size=51 bytes  throughput=0.0022 MB/s
+[2026-03-12 13:58:38]  event=file_receive  user=alice  file=test.txt from=127.0.0.1 status=ok  size=51 bytes  throughput=0.0035 MB/s
