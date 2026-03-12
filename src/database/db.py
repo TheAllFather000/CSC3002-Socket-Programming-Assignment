@@ -9,8 +9,8 @@ PASSWORD = "Yellowbeansaregreeninpalehaven123!"
 HOST = "localhost"
 PORT = 5432
 INSERT_QUERY_USERS = """
-        INSERT INTO user_info(username, password, colour)
-        VALUES ('{user}', '{pass_}', '{colour_}');
+        INSERT INTO user_info(username, password, colour, output_path)
+        VALUES ('{user}', '{pass_}', '{colour_}', '{op}');
     """
 
 INSERT_QUERY_MESSAGES = """
@@ -24,11 +24,11 @@ INSERT_QUERY_MESSAGES_GROUP = """
 
 
 SELECT_USERS = """
-    SELECT username, colour FROM user_info 
+    SELECT username, password, colour, output_path FROM user_info 
     WHERE username = '{user}';
 """
 SELECT_USERS_ALL = """
-    SELECT username, colour FROM user_info;
+    SELECT username, colour, output_path FROM user_info;
 """
 
 SELECT_MESSAGES = """
@@ -59,7 +59,7 @@ class DB:
     def __init__(self):
         self.connection = psycopg2.connect(**connection_params)
 
-    def create_user(self, username: str, password: str):
+    def create_user(self, username: str, password: str, output: str):
         colour = {
             '"r"': random.randint(0, 255),
             '"g"': random.randint(0, 255),
@@ -70,7 +70,7 @@ class DB:
         try:
             cursor.execute(
                 INSERT_QUERY_USERS.format(
-                    user=username, pass_=password, colour_=colours
+                    user=username, pass_=password, colour_=colours, op=output
                 )
             )
             self.connection.commit()
@@ -126,8 +126,11 @@ class DB:
     def exit_group(self, group_name, member):
         cursor = self.connection.cursor()
         try:
+            print(
+                f"UPDATE groups set members = array_remove(members, '{member}') WHERE group_name = '{group_name}'"
+            )
             cursor.execute(
-                f"UPDATE groups set members = array_remove(members, '{member}' WHERE group_name = '{group_name}'"
+                f"UPDATE groups set members = array_remove(members, '{member}') WHERE group_name = '{group_name}'"
             )
             self.connection.commit()
             return True
@@ -183,7 +186,7 @@ class DB:
         cursor = self.connection.cursor()
         try:
             cursor.execute(
-                f"UPDATE groups set members = array_append(members, '{member}') WHERE group_name = {group}"
+                f"UPDATE groups set members = array_append(members, '{member}') WHERE group_name = '{group}'"
             )
             self.connection.commit()
             return True
@@ -204,10 +207,14 @@ class DB:
         try:
             cursor.execute(SELECT_USERS.format(user=username))
             response = cursor.fetchall()
-
-            data = json.dumps({"username": response[0][0], "colour": response[0][1]})
-            # print(data)
             if response:
+                data = {
+                    "username": response[0][0],
+                    "colour": response[0][2],
+                    "password": response[0][1],
+                    "output_path": response[0][3],
+                }
+
                 return data
             return None
         except psycopg2.errors.Error as e:
@@ -216,6 +223,23 @@ class DB:
         except Exception as e:
             print("Exception: ", e)
             return None
+
+    def update_output(self, username, password, output):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                f"UPDATE user_info SET output_path = '{output}' WHERE username = '{username}' AND password = '{password}'"
+            )
+            self.connection.commit()
+            return True
+        except psycopg2.errors.Error as e:
+            self.connection.rollback()
+            print("Psycopg error: ", e)
+            return False
+        except Exception as e:
+            self.connection.rollback()
+            print("Exception: ", e)
+            return False
 
     def retrieve_all_users(self):
         cursor = self.connection.cursor()

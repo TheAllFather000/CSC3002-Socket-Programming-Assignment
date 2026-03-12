@@ -20,14 +20,16 @@ S        C      H   H   A A     T
 
 
 def main():
-    print(subprocess.run("curl ifconfig.me", shell=True).returncode)
+    # print(subprocess.run("curl ifconfig.me", shell=True).returncode)
     bright_yellow(ascii_art)
     global server_sock, server_handler
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_sock.bind(("0.0.0.0", 5959))
+    server_sock.bind(("0.0.0.0", 5958))
     server_handler = server_thread(server_sock, "0.0.0.0", 5958)
-    thread = threading.Thread(target=server_handler.handle_online_status)
+    thread = threading.Thread(target=server_handler.handle_online_status, daemon=True)
+    thread2 = threading.Thread(target=server_handler.ping, daemon=True)
     thread.start()
+    thread2.start()
     # ip = subprocess.run("curl ifconfig.me", shell=True).returncode
     start()
 
@@ -45,8 +47,9 @@ def start():
             conn, addr = server_sock.accept()
             # thread = threading.Thread(target=self.handle_client, args=(conn, addr))
             # thread.start():
+            print("connection")
             thread = threading.Thread(
-                target=server_handler.handle_client, args=(conn, addr)
+                target=server_handler.handle_client, args=(conn, addr), daemon=True
             )
             thread.start()
             # server_handler.handle_client(conn, addr)

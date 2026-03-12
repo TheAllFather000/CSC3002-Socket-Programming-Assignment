@@ -39,11 +39,10 @@ while True:
     break
 register_payload = json.dumps(
     {
-        "command": "create_group",
+        "command": "exit_group",
         "username": "chi-chi",
-        "password": "testp__",
-        "group_name": "torsion5__",
-        "members": '["wyrm", "zaahir"]',
+        "password": "1333",
+        "group_name": "trio",
     }
 )
 client.send(register_payload.encode())
@@ -58,10 +57,12 @@ while True:
     m = client.recv(3000)
     if not m:
         break
+    print(m)
     data = json.loads(m.decode())
     if data["process"] == "logout":
         print("JAAAAA")
         break
+
 # m = client.recv(3000)
 # data = json.loads(m.decode())
 # print(data)
